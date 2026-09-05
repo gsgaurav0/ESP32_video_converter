@@ -1,0 +1,3408 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>ESP32 OLED Video Studio</title>
+
+<style>
+
+:root {
+    --bg:#070b10;
+    --panel:#0d141c;
+    --panel2:#111a24;
+    --border:#253241;
+    --text:#f5f7fa;
+    --muted:#8c9aaa;
+    --blue:#1683ff;
+    --green:#16d47b;
+    --red:#ff5570;
+}
+
+* {
+    box-sizing:border-box;
+}
+
+body {
+    margin:0;
+    background:
+        radial-gradient(
+            circle at top,
+            #142131 0,
+            #070b10 48%
+        );
+    color:var(--text);
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+header {
+    height:70px;
+    padding:0 25px;
+    display:flex;
+    align-items:center;
+    border-bottom:1px solid var(--border);
+    background:#080d13;
+}
+
+.logo {
+    font-size:22px;
+    font-weight:800;
+}
+
+.logo span {
+    color:var(--blue);
+}
+
+.header-right {
+    margin-left:auto;
+    color:var(--muted);
+    font-size:12px;
+}
+
+.container {
+    max-width:1550px;
+    margin:auto;
+    padding:20px;
+}
+
+.main {
+    display:grid;
+    grid-template-columns:350px 1fr;
+    gap:18px;
+}
+
+.card {
+    background:rgba(13,20,28,.97);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:17px;
+    margin-bottom:17px;
+}
+
+.title {
+    font-weight:750;
+    font-size:14px;
+    margin-bottom:15px;
+}
+
+.upload {
+    border:2px dashed #344353;
+    border-radius:10px;
+    padding:30px 10px;
+    text-align:center;
+    cursor:pointer;
+}
+
+.upload:hover {
+    border-color:var(--blue);
+    background:#0b1723;
+}
+
+.upload-icon {
+    font-size:35px;
+}
+
+.upload-title {
+    margin-top:10px;
+    font-weight:700;
+}
+
+.upload-sub {
+    color:var(--muted);
+    font-size:11px;
+    margin-top:7px;
+}
+
+.row {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.control {
+    margin-top:13px;
+}
+
+.control label {
+    display:flex;
+    justify-content:space-between;
+    color:#aeb9c6;
+    font-size:11px;
+    margin-bottom:6px;
+}
+
+.value {
+    color:white;
+    font-family:monospace;
+}
+
+input[type="number"],
+select {
+    width:100%;
+    height:38px;
+    border-radius:7px;
+    border:1px solid #303d4a;
+    background:#080d13;
+    color:white;
+    padding:0 9px;
+}
+
+input[type="range"] {
+    width:100%;
+    accent-color:var(--blue);
+}
+
+.checkbox {
+    display:flex;
+    gap:8px;
+    align-items:center;
+    margin-top:15px;
+    color:#aeb9c6;
+    font-size:11px;
+}
+
+.checkbox input {
+    accent-color:var(--blue);
+}
+
+button {
+    width:100%;
+    border:0;
+    border-radius:7px;
+    padding:12px;
+    margin-top:9px;
+    background:var(--blue);
+    color:white;
+    font-weight:700;
+    cursor:pointer;
+}
+
+button:hover {
+    filter:brightness(1.12);
+}
+
+button:disabled {
+    opacity:.4;
+    cursor:not-allowed;
+}
+
+.secondary {
+    background:#26323e;
+}
+
+.green {
+    background:#10a960;
+}
+
+.preview-header {
+    display:flex;
+    align-items:center;
+    margin-bottom:14px;
+}
+
+.live {
+    margin-left:auto;
+    color:var(--green);
+    font-size:11px;
+    font-weight:bold;
+}
+
+.preview-grid {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+}
+
+.preview-box {
+    background:#030507;
+    border:1px solid var(--border);
+    border-radius:9px;
+    overflow:hidden;
+}
+
+.preview-label {
+    padding:10px;
+    border-bottom:1px solid var(--border);
+    color:#aab5c0;
+    font-size:11px;
+}
+
+.video-area {
+    min-height:350px;
+    background:#000;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+#video {
+    width:100%;
+    max-height:440px;
+    display:block;
+    background:#000;
+}
+
+.oled-area {
+    min-height:350px;
+    background:#000;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
+
+#oledCanvas {
+    width:100%;
+    max-width:700px;
+    height:auto;
+    image-rendering:pixelated;
+    image-rendering:crisp-edges;
+    background:#000;
+    border:6px solid #252d35;
+    border-radius:5px;
+}
+
+.timeline {
+    padding:13px;
+    background:#080d13;
+    border-top:1px solid var(--border);
+}
+
+.timeline-row {
+    display:grid;
+    grid-template-columns:55px 1fr 55px;
+    gap:10px;
+    align-items:center;
+}
+
+.time {
+    font-family:monospace;
+    font-size:10px;
+    color:#aab5c0;
+}
+
+.details {
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:9px;
+}
+
+.detail {
+    padding:11px;
+    background:#080e14;
+    border:1px solid var(--border);
+    border-radius:8px;
+    min-width:0;
+}
+
+.detail-name {
+    color:#718091;
+    font-size:9px;
+    text-transform:uppercase;
+}
+
+.detail-value {
+    margin-top:5px;
+    font-family:monospace;
+    font-size:12px;
+    word-break:break-word;
+}
+
+.stats {
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:9px;
+}
+
+.stat {
+    background:#080e14;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:11px;
+}
+
+.stat-title {
+    color:#718091;
+    font-size:9px;
+    text-transform:uppercase;
+}
+
+.stat-value {
+    margin-top:5px;
+    font-family:monospace;
+    font-size:14px;
+}
+
+.progress {
+    height:9px;
+    background:#202a34;
+    border-radius:20px;
+    overflow:hidden;
+}
+
+.progress-bar {
+    height:100%;
+    width:0;
+    background:var(--blue);
+}
+
+.status {
+    color:var(--muted);
+    font-size:11px;
+    margin-top:9px;
+}
+
+#code {
+    width:100%;
+    height:500px;
+    resize:vertical;
+    background:#030609;
+    border:1px solid var(--border);
+    border-radius:8px;
+    color:#a7ffba;
+    padding:14px;
+    font-family:Consolas,monospace;
+    font-size:11px;
+    line-height:1.5;
+}
+
+.code-buttons {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.warning {
+    margin-top:10px;
+    padding:10px;
+    background:#17120a;
+    border:1px solid #4d3a18;
+    color:#d9bd80;
+    border-radius:7px;
+    font-size:10px;
+    line-height:1.5;
+}
+
+@media(max-width:1050px) {
+
+    .main {
+        grid-template-columns:1fr;
+    }
+
+    .details {
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .stats {
+        grid-template-columns:repeat(3,1fr);
+    }
+}
+
+@media(max-width:700px) {
+
+    .preview-grid {
+        grid-template-columns:1fr;
+    }
+
+    .details,
+    .stats {
+        grid-template-columns:repeat(2,1fr);
+    }
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+    <div class="logo">
+        ESP32 <span>OLED Studio</span>
+    </div>
+
+    <div class="header-right">
+        Video → 1-bit → OLED → ESP32
+    </div>
+
+</header>
+
+
+<div class="container">
+
+
+<div class="main">
+
+
+<!-- =====================================================
+     LEFT CONTROL PANEL
+===================================================== -->
+
+<div>
+
+
+<div class="card">
+
+    <div class="title">
+        🎬 Video
+    </div>
+
+    <div
+        class="upload"
+        id="upload"
+    >
+
+        <div class="upload-icon">
+            📁
+        </div>
+
+        <div class="upload-title">
+            Select Video
+        </div>
+
+        <div class="upload-sub">
+            MP4 • WebM • MOV • AVI
+        </div>
+
+        <input
+            id="fileInput"
+            type="file"
+            accept="video/*"
+            hidden
+        >
+
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <div class="title">
+        ⏱ Video Range
+    </div>
+
+    <div class="row">
+
+        <div class="control">
+
+            <label>Start</label>
+
+            <input
+                id="startTime"
+                type="number"
+                value="0"
+                min="0"
+                step="0.01"
+            >
+
+        </div>
+
+
+        <div class="control">
+
+            <label>End</label>
+
+            <input
+                id="endTime"
+                type="number"
+                value="0"
+                min="0"
+                step="0.01"
+            >
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <div class="title">
+        📺 OLED Resolution
+    </div>
+
+    <div class="row">
+
+        <div class="control">
+
+            <label>Width</label>
+
+            <input
+                id="width"
+                type="number"
+                value="128"
+                min="8"
+                step="8"
+            >
+
+        </div>
+
+
+        <div class="control">
+
+            <label>Height</label>
+
+            <input
+                id="height"
+                type="number"
+                value="64"
+                min="8"
+                step="8"
+            >
+
+        </div>
+
+    </div>
+
+
+    <div class="control">
+
+        <label>
+            Scaling
+        </label>
+
+        <select id="resizeMode">
+
+            <option value="cover">
+                COVER — Fill Entire OLED
+            </option>
+
+            <option value="stretch">
+                STRETCH — No Cropping
+            </option>
+
+            <option value="fit">
+                FIT — Preserve Entire Video
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <div class="warning">
+
+        <b>COVER</b> crops the sides/top as necessary
+        so every OLED pixel is filled with video.
+        This is recommended for 128×64 OLED.
+
+    </div>
+
+
+    <div class="control">
+
+        <label>
+
+            Output FPS
+
+            <span
+                id="fpsValue"
+                class="value"
+            >
+                20 FPS
+            </span>
+
+        </label>
+
+        <input
+            id="fps"
+            type="range"
+            min="1"
+            max="30"
+            value="20"
+        >
+
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <div class="title">
+        🌓 Image Processing
+    </div>
+
+
+    <div class="control">
+
+        <label>
+            Threshold Method
+        </label>
+
+        <select id="thresholdMode">
+
+            <option value="otsu">
+                Otsu
+            </option>
+
+            <option value="fixed">
+                Fixed Threshold
+            </option>
+
+            <option value="dither">
+                Floyd-Steinberg Dither
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <div class="control">
+
+        <label>
+
+            Threshold
+
+            <span
+                id="thresholdValue"
+                class="value"
+            >
+                128
+            </span>
+
+        </label>
+
+        <input
+            id="threshold"
+            type="range"
+            min="0"
+            max="255"
+            value="128"
+        >
+
+    </div>
+
+
+    <div class="control">
+
+        <label>
+
+            Brightness
+
+            <span
+                id="brightnessValue"
+                class="value"
+            >
+                0
+            </span>
+
+        </label>
+
+        <input
+            id="brightness"
+            type="range"
+            min="-100"
+            max="100"
+            value="0"
+        >
+
+    </div>
+
+
+    <div class="control">
+
+        <label>
+
+            Contrast
+
+            <span
+                id="contrastValue"
+                class="value"
+            >
+                100%
+            </span>
+
+        </label>
+
+        <input
+            id="contrast"
+            type="range"
+            min="50"
+            max="200"
+            value="100"
+        >
+
+    </div>
+
+
+    <div class="control">
+
+        <label>
+
+            Gamma
+
+            <span
+                id="gammaValue"
+                class="value"
+            >
+                1.0
+            </span>
+
+        </label>
+
+        <input
+            id="gamma"
+            type="range"
+            min="50"
+            max="200"
+            value="100"
+        >
+
+    </div>
+
+
+    <div class="checkbox">
+
+        <input
+            id="invert"
+            type="checkbox"
+        >
+
+        Invert OLED output
+
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <div class="title">
+        ⚡ ESP32 / OLED
+    </div>
+
+
+    <div class="row">
+
+        <div class="control">
+
+            <label>SDA</label>
+
+            <input
+                id="sda"
+                type="number"
+                value="21"
+            >
+
+        </div>
+
+
+        <div class="control">
+
+            <label>SCL</label>
+
+            <input
+                id="scl"
+                type="number"
+                value="22"
+            >
+
+        </div>
+
+    </div>
+
+
+    <div class="control">
+
+        <label>
+            OLED Address
+        </label>
+
+        <select id="address">
+
+            <option value="0x3C">
+                0x3C
+            </option>
+
+            <option value="0x3D">
+                0x3D
+            </option>
+
+        </select>
+
+    </div>
+
+</div>
+
+
+<button
+    id="generate"
+    disabled
+>
+    🚀 Generate ESP32 Code
+</button>
+
+
+</div>
+
+
+<!-- =====================================================
+     RIGHT SIDE
+===================================================== -->
+
+<div>
+
+
+<div class="card">
+
+
+    <div class="preview-header">
+
+        <div class="title">
+            Live Preview
+        </div>
+
+        <div class="live">
+            ● LIVE
+        </div>
+
+    </div>
+
+
+    <div class="preview-grid">
+
+
+        <div class="preview-box">
+
+            <div class="preview-label">
+                🎥 Original Video
+            </div>
+
+
+            <div class="video-area">
+
+                <video
+                    id="video"
+                    controls
+                    playsinline
+                    preload="metadata"
+                ></video>
+
+            </div>
+
+        </div>
+
+
+        <div class="preview-box">
+
+            <div class="preview-label">
+                📺 Exact OLED Output
+            </div>
+
+
+            <div class="oled-area">
+
+                <canvas
+                    id="oledCanvas"
+                    width="128"
+                    height="64"
+                ></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="timeline">
+
+        <div class="timeline-row">
+
+            <div
+                id="currentTime"
+                class="time"
+            >
+                00:00
+            </div>
+
+
+            <input
+                id="seek"
+                type="range"
+                min="0"
+                max="0"
+                step="0.01"
+                value="0"
+            >
+
+
+            <div
+                id="duration"
+                class="time"
+            >
+                00:00
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     VIDEO DETAILS
+===================================================== -->
+
+<div class="card">
+
+    <div class="title">
+        📄 Complete Video Details
+    </div>
+
+
+    <div class="details">
+
+
+        <div class="detail">
+
+            <div class="detail-name">
+                File Name
+            </div>
+
+            <div
+                id="dFile"
+                class="detail-value"
+            >
+                —
+            </div>
+
+        </div>
+
+
+        <div class="detail">
+
+            <div class="detail-name">
+                File Size
+            </div>
+
+            <div
+                id="dSize"
+                class="detail-value"
+            >
+                —
+            </div>
+
+        </div>
+
+
+        <div class="detail">
+
+            <div class="detail-name">
+                Resolution
+            </div>
+
+            <div
+                id="dResolution"
+                class="detail-value"
+            >
+                —
+            </div>
+
+        </div>
+
+
+        <div class="detail">
+
+            <div class="detail-name">
+                Aspect Ratio
+            </div>
+
+            <div
+                id="dRatio"
+                class="detail-value"
+            >
+                —
+            </div>
+
+        </div>
+
+
+        <div class="detail">
+
+            <div class="detail-name">
+                Duration
+            </div>
+
+            <div
+                id="dDuration"
+                class="detail-value"
+            >
+                —
+            </div>
+
+        </div>
+
+
+        <div class="detail">
+
+            <div class="detail-name">
+                MIME Type
+            </div>
+
+            <div
+                id="dMime"
+                class="detail-value"
+            >
+                —
+            </div>
+
+        </div>
+
+
+        <div class="detail">
+
+            <div class="detail-name">
+                Estimated Frames
+            </div>
+
+            <div
+                id="dFrames"
+                class="detail-value"
+            >
+                —
+            </div>
+
+        </div>
+
+
+        <div class="detail">
+
+            <div class="detail-name">
+                Source FPS
+            </div>
+
+            <div
+                id="dFPS"
+                class="detail-value"
+            >
+                Browser
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     OUTPUT INFORMATION
+===================================================== -->
+
+<div class="card">
+
+    <div class="title">
+        📊 OLED Output Information
+    </div>
+
+
+    <div class="stats">
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                OLED
+            </div>
+
+            <div
+                id="sResolution"
+                class="stat-value"
+            >
+                128×64
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                Pixels
+            </div>
+
+            <div
+                id="sPixels"
+                class="stat-value"
+            >
+                8,192
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                Bytes / Frame
+            </div>
+
+            <div
+                id="sBytes"
+                class="stat-value"
+            >
+                1,024
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                Frames
+            </div>
+
+            <div
+                id="sFrames"
+                class="stat-value"
+            >
+                0
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                Video Data
+            </div>
+
+            <div
+                id="sMemory"
+                class="stat-value"
+            >
+                0 KB
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                Delay
+            </div>
+
+            <div
+                id="sDelay"
+                class="stat-value"
+            >
+                50 ms
+            </div>
+
+        </div>
+
+
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <div class="title">
+        ⚙ Generation Progress
+    </div>
+
+
+    <div class="progress">
+
+        <div
+            id="progress"
+            class="progress-bar"
+        ></div>
+
+    </div>
+
+
+    <div
+        id="status"
+        class="status"
+    >
+        Select a video.
+    </div>
+
+</div>
+
+
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     CODE
+===================================================== -->
+
+<div class="card">
+
+    <div class="title">
+        💻 Complete ESP32 Code
+    </div>
+
+
+    <textarea
+        id="code"
+        readonly
+        placeholder="Your complete ESP32 code will appear here..."
+    ></textarea>
+
+
+    <div class="code-buttons">
+
+        <button
+            id="copy"
+            class="secondary"
+            disabled
+        >
+            📋 Copy Code
+        </button>
+
+
+        <button
+            id="download"
+            class="green"
+            disabled
+        >
+            💾 Download .cpp
+        </button>
+
+    </div>
+
+</div>
+
+
+</div>
+
+
+<script>
+
+
+/* =====================================================
+   GLOBAL
+===================================================== */
+
+let file = null;
+
+let fileURL = null;
+
+let frames = [];
+
+let generatedCode = "";
+
+let previewRunning = false;
+
+
+/* =====================================================
+   ELEMENTS
+===================================================== */
+
+const video =
+    document.getElementById("video");
+
+const canvas =
+    document.getElementById("oledCanvas");
+
+const ctx =
+    canvas.getContext(
+        "2d",
+        {
+            willReadFrequently:true
+        }
+    );
+
+
+/* =====================================================
+   FILE
+===================================================== */
+
+document
+.getElementById("upload")
+.addEventListener(
+    "click",
+    () => {
+
+        document
+        .getElementById("fileInput")
+        .click();
+
+    }
+);
+
+
+document
+.getElementById("fileInput")
+.addEventListener(
+    "change",
+    e => {
+
+        if(
+            e.target.files.length
+        ) {
+
+            loadVideo(
+                e.target.files[0]
+            );
+
+        }
+
+    }
+);
+
+
+/* =====================================================
+   LOAD VIDEO
+===================================================== */
+
+function loadVideo(f) {
+
+    file = f;
+
+
+    if(fileURL) {
+
+        URL.revokeObjectURL(
+            fileURL
+        );
+
+    }
+
+
+    fileURL =
+        URL.createObjectURL(
+            file
+        );
+
+
+    video.src =
+        fileURL;
+
+
+    video.load();
+
+
+    video.onloadedmetadata =
+        () => {
+
+            const w =
+                video.videoWidth;
+
+            const h =
+                video.videoHeight;
+
+            const duration =
+                video.duration;
+
+
+            document
+            .getElementById("dFile")
+            .textContent =
+                file.name;
+
+
+            document
+            .getElementById("dSize")
+            .textContent =
+                formatBytes(
+                    file.size
+                );
+
+
+            document
+            .getElementById("dResolution")
+            .textContent =
+                `${w} × ${h}`;
+
+
+            document
+            .getElementById("dRatio")
+            .textContent =
+                ratio(
+                    w,
+                    h
+                );
+
+
+            document
+            .getElementById("dDuration")
+            .textContent =
+                formatTime(
+                    duration
+                );
+
+
+            document
+            .getElementById("dMime")
+            .textContent =
+                file.type ||
+                "Unknown";
+
+
+            document
+            .getElementById("dFPS")
+            .textContent =
+                "Not exposed by HTML5";
+
+
+            document
+            .getElementById("startTime")
+            .value =
+                0;
+
+
+            document
+            .getElementById("endTime")
+            .value =
+                duration.toFixed(2);
+
+
+            const seek =
+                document.getElementById(
+                    "seek"
+                );
+
+
+            seek.max =
+                duration;
+
+
+            seek.value =
+                0;
+
+
+            document
+            .getElementById("duration")
+            .textContent =
+                formatTime(
+                    duration
+                );
+
+
+            document
+            .getElementById("generate")
+            .disabled =
+                false;
+
+
+            document
+            .getElementById("status")
+            .textContent =
+                "Video loaded. Press play to see exact OLED output.";
+
+
+            updateStats();
+
+            startPreview();
+
+        };
+
+}
+
+
+/* =====================================================
+   SETTINGS
+===================================================== */
+
+function settings() {
+
+    return {
+
+        width:
+            parseInt(
+                document
+                .getElementById("width")
+                .value
+            ),
+
+        height:
+            parseInt(
+                document
+                .getElementById("height")
+                .value
+            ),
+
+        fps:
+            parseInt(
+                document
+                .getElementById("fps")
+                .value
+            ),
+
+        resize:
+            document
+            .getElementById("resizeMode")
+            .value,
+
+        thresholdMode:
+            document
+            .getElementById("thresholdMode")
+            .value,
+
+        threshold:
+            parseInt(
+                document
+                .getElementById("threshold")
+                .value
+            ),
+
+        brightness:
+            parseInt(
+                document
+                .getElementById("brightness")
+                .value
+            ),
+
+        contrast:
+            parseInt(
+                document
+                .getElementById("contrast")
+                .value
+            ),
+
+        gamma:
+            parseInt(
+                document
+                .getElementById("gamma")
+                .value
+            ) / 100,
+
+        invert:
+            document
+            .getElementById("invert")
+            .checked
+
+    };
+
+}
+
+
+/* =====================================================
+   DRAW VIDEO
+===================================================== */
+
+function drawVideo(s) {
+
+    const vw =
+        video.videoWidth;
+
+    const vh =
+        video.videoHeight;
+
+
+    ctx.fillStyle =
+        "black";
+
+    ctx.fillRect(
+        0,
+        0,
+        s.width,
+        s.height
+    );
+
+
+    /*
+       STRETCH
+    */
+
+    if(
+        s.resize ===
+        "stretch"
+    ) {
+
+        ctx.drawImage(
+            video,
+            0,
+            0,
+            s.width,
+            s.height
+        );
+
+        return;
+
+    }
+
+
+    const sourceRatio =
+        vw / vh;
+
+    const targetRatio =
+        s.width / s.height;
+
+
+    /*
+       COVER
+
+       Crop source so entire
+       OLED area is filled.
+    */
+
+    if(
+        s.resize ===
+        "cover"
+    ) {
+
+        let sw = vw;
+
+        let sh = vh;
+
+        let sx = 0;
+
+        let sy = 0;
+
+
+        if(
+            sourceRatio >
+            targetRatio
+        ) {
+
+            sw =
+                vh *
+                targetRatio;
+
+            sx =
+                (
+                    vw -
+                    sw
+                ) / 2;
+
+        } else {
+
+            sh =
+                vw /
+                targetRatio;
+
+            sy =
+                (
+                    vh -
+                    sh
+                ) / 2;
+
+        }
+
+
+        ctx.drawImage(
+
+            video,
+
+            sx,
+            sy,
+            sw,
+            sh,
+
+            0,
+            0,
+            s.width,
+            s.height
+
+        );
+
+        return;
+
+    }
+
+
+    /*
+       FIT
+
+       Entire video preserved.
+    */
+
+    let dw;
+
+    let dh;
+
+
+    if(
+        sourceRatio >
+        targetRatio
+    ) {
+
+        dw =
+            s.width;
+
+        dh =
+            s.width /
+            sourceRatio;
+
+    } else {
+
+        dh =
+            s.height;
+
+        dw =
+            s.height *
+            sourceRatio;
+
+    }
+
+
+    ctx.drawImage(
+
+        video,
+
+        0,
+        0,
+        vw,
+        vh,
+
+        (
+            s.width -
+            dw
+        ) / 2,
+
+        (
+            s.height -
+            dh
+        ) / 2,
+
+        dw,
+        dh
+
+    );
+
+}
+
+
+/* =====================================================
+   OTSU
+===================================================== */
+
+function otsu(gray) {
+
+    const histogram =
+        new Array(256)
+        .fill(0);
+
+
+    for(
+        let i=0;
+        i<gray.length;
+        i++
+    ) {
+
+        histogram[
+            gray[i]
+        ]++;
+
+    }
+
+
+    const total =
+        gray.length;
+
+
+    let sum=0;
+
+
+    for(
+        let i=0;
+        i<256;
+        i++
+    ) {
+
+        sum +=
+            i *
+            histogram[i];
+
+    }
+
+
+    let sumB=0;
+
+    let weightB=0;
+
+    let max=0;
+
+    let threshold=128;
+
+
+    for(
+        let t=0;
+        t<256;
+        t++
+    ) {
+
+        weightB +=
+            histogram[t];
+
+
+        if(
+            weightB === 0
+        )
+            continue;
+
+
+        const weightF =
+            total -
+            weightB;
+
+
+        if(
+            weightF === 0
+        )
+            break;
+
+
+        sumB +=
+            t *
+            histogram[t];
+
+
+        const meanB =
+            sumB /
+            weightB;
+
+
+        const meanF =
+            (
+                sum -
+                sumB
+            ) /
+            weightF;
+
+
+        const between =
+            weightB *
+            weightF *
+            Math.pow(
+                meanB -
+                meanF,
+                2
+            );
+
+
+        if(
+            between >
+            max
+        ) {
+
+            max =
+                between;
+
+            threshold =
+                t;
+
+        }
+
+    }
+
+
+    return threshold;
+
+}
+
+
+/* =====================================================
+   PROCESS FRAME
+===================================================== */
+
+function processFrame(
+    s,
+    returnBytes=false
+) {
+
+    drawVideo(s);
+
+
+    const image =
+        ctx.getImageData(
+            0,
+            0,
+            s.width,
+            s.height
+        );
+
+
+    const data =
+        image.data;
+
+
+    const count =
+        s.width *
+        s.height;
+
+
+    const gray =
+        new Float32Array(
+            count
+        );
+
+
+    /*
+       RGB → GRAY
+    */
+
+    for(
+        let i=0;
+        i<count;
+        i++
+    ) {
+
+        const r =
+            data[
+                i*4
+            ];
+
+        const g =
+            data[
+                i*4+1
+            ];
+
+        const b =
+            data[
+                i*4+2
+            ];
+
+
+        let value =
+
+            0.299*r +
+            0.587*g +
+            0.114*b;
+
+
+        /*
+           BRIGHTNESS
+        */
+
+        value +=
+            s.brightness;
+
+
+        /*
+           CONTRAST
+        */
+
+        value =
+            (
+                value -
+                128
+            )
+            *
+            (
+                s.contrast /
+                100
+            )
+            +
+            128;
+
+
+        /*
+           GAMMA
+        */
+
+        value =
+            255 *
+            Math.pow(
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        value /
+                        255
+                    )
+                ),
+                1 /
+                s.gamma
+            );
+
+
+        gray[i] =
+            Math.max(
+                0,
+                Math.min(
+                    255,
+                    value
+                )
+            );
+
+    }
+
+
+    let threshold =
+        s.threshold;
+
+
+    if(
+        s.thresholdMode ===
+        "otsu"
+    ) {
+
+        const temp =
+            new Uint8Array(
+                count
+            );
+
+
+        for(
+            let i=0;
+            i<count;
+            i++
+        ) {
+
+            temp[i] =
+                Math.round(
+                    gray[i]
+                );
+
+        }
+
+
+        threshold =
+            otsu(
+                temp
+            );
+
+    }
+
+
+    const binary =
+        new Uint8Array(
+            count
+        );
+
+
+    /*
+       DITHER
+    */
+
+    if(
+        s.thresholdMode ===
+        "dither"
+    ) {
+
+        const work =
+            new Float32Array(
+                gray
+            );
+
+
+        for(
+            let y=0;
+            y<s.height;
+            y++
+        ) {
+
+            for(
+                let x=0;
+                x<s.width;
+                x++
+            ) {
+
+                const index =
+                    y*s.width+x;
+
+
+                const old =
+                    work[index];
+
+
+                const newValue =
+                    old >=
+                    threshold
+                        ? 255
+                        : 0;
+
+
+                binary[index] =
+                    newValue;
+
+
+                const error =
+                    old -
+                    newValue;
+
+
+                if(
+                    x+1 <
+                    s.width
+                ) {
+
+                    work[
+                        index+1
+                    ] +=
+                        error *
+                        7/16;
+
+                }
+
+
+                if(
+                    y+1 <
+                    s.height
+                ) {
+
+                    if(
+                        x>0
+                    ) {
+
+                        work[
+                            index+s.width-1
+                        ] +=
+                            error *
+                            3/16;
+
+                    }
+
+
+                    work[
+                        index+s.width
+                    ] +=
+                        error *
+                        5/16;
+
+
+                    if(
+                        x+1 <
+                        s.width
+                    ) {
+
+                        work[
+                            index+s.width+1
+                        ] +=
+                            error *
+                            1/16;
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    } else {
+
+        /*
+           NORMAL THRESHOLD
+        */
+
+        for(
+            let i=0;
+            i<count;
+            i++
+        ) {
+
+            let white =
+                gray[i] >=
+                threshold;
+
+
+            if(
+                s.invert
+            ) {
+
+                white =
+                    !white;
+
+            }
+
+
+            binary[i] =
+                white
+                    ? 255
+                    : 0;
+
+        }
+
+    }
+
+
+    /*
+       INVERT DITHER RESULT
+    */
+
+    if(
+        s.invert &&
+        s.thresholdMode ===
+        "dither"
+    ) {
+
+        for(
+            let i=0;
+            i<count;
+            i++
+        ) {
+
+            binary[i] =
+                binary[i]
+                    ? 0
+                    : 255;
+
+        }
+
+    }
+
+
+    /*
+       PREVIEW
+    */
+
+    if(
+        !returnBytes
+    ) {
+
+        const output =
+            ctx.createImageData(
+                s.width,
+                s.height
+            );
+
+
+        for(
+            let i=0;
+            i<count;
+            i++
+        ) {
+
+            const v =
+                binary[i];
+
+
+            output.data[
+                i*4
+            ] =
+                v;
+
+
+            output.data[
+                i*4+1
+            ] =
+                v;
+
+
+            output.data[
+                i*4+2
+            ] =
+                v;
+
+
+            output.data[
+                i*4+3
+            ] =
+                255;
+
+        }
+
+
+        ctx.putImageData(
+            output,
+            0,
+            0
+        );
+
+
+        return;
+
+    }
+
+
+    /*
+       PACK BITS
+    */
+
+    const bytes=[];
+
+
+    for(
+        let i=0;
+        i<binary.length;
+        i+=8
+    ) {
+
+        let value=0;
+
+
+        for(
+            let bit=0;
+            bit<8;
+            bit++
+        ) {
+
+            if(
+                binary[
+                    i+bit
+                ] > 0
+            ) {
+
+                value |=
+                    1 <<
+                    (
+                        7-bit
+                    );
+
+            }
+
+        }
+
+
+        bytes.push(
+            value
+        );
+
+    }
+
+
+    return bytes;
+
+}
+
+
+/* =====================================================
+   LIVE PREVIEW
+===================================================== */
+
+function startPreview() {
+
+    if(
+        previewRunning
+    )
+        return;
+
+
+    previewRunning=true;
+
+
+    function loop() {
+
+        if(
+            video.readyState >= 2
+        ) {
+
+            const s =
+                settings();
+
+
+            canvas.width =
+                s.width;
+
+
+            canvas.height =
+                s.height;
+
+
+            processFrame(
+                s,
+                false
+            );
+
+        }
+
+
+        requestAnimationFrame(
+            loop
+        );
+
+    }
+
+
+    loop();
+
+}
+
+
+/* =====================================================
+   VIDEO EVENTS
+===================================================== */
+
+video.addEventListener(
+    "timeupdate",
+    () => {
+
+        const seek =
+            document.getElementById(
+                "seek"
+            );
+
+
+        seek.value =
+            video.currentTime;
+
+
+        document
+        .getElementById(
+            "currentTime"
+        )
+        .textContent =
+            formatTime(
+                video.currentTime
+            );
+
+    }
+);
+
+
+document
+.getElementById("seek")
+.addEventListener(
+    "input",
+    e => {
+
+        video.currentTime =
+            parseFloat(
+                e.target.value
+            );
+
+    }
+);
+
+
+/* =====================================================
+   SETTINGS EVENTS
+===================================================== */
+
+[
+    "width",
+    "height",
+    "resizeMode",
+    "thresholdMode",
+    "threshold",
+    "brightness",
+    "contrast",
+    "gamma",
+    "invert",
+    "fps"
+]
+.forEach(
+    id => {
+
+        const element =
+            document.getElementById(
+                id
+            );
+
+
+        element.addEventListener(
+            "input",
+            updateUI
+        );
+
+
+        element.addEventListener(
+            "change",
+            updateUI
+        );
+
+    }
+);
+
+
+function updateUI() {
+
+    const fps =
+        document.getElementById(
+            "fps"
+        ).value;
+
+
+    document
+    .getElementById(
+        "fpsValue"
+    )
+    .textContent =
+        fps +
+        " FPS";
+
+
+    document
+    .getElementById(
+        "thresholdValue"
+    )
+    .textContent =
+        document
+        .getElementById(
+            "threshold"
+        )
+        .value;
+
+
+    document
+    .getElementById(
+        "brightnessValue"
+    )
+    .textContent =
+        document
+        .getElementById(
+            "brightness"
+        )
+        .value;
+
+
+    document
+    .getElementById(
+        "contrastValue"
+    )
+    .textContent =
+        document
+        .getElementById(
+            "contrast"
+        )
+        .value +
+        "%";
+
+
+    document
+    .getElementById(
+        "gammaValue"
+    )
+    .textContent =
+        (
+            parseInt(
+                document
+                .getElementById(
+                    "gamma"
+                )
+                .value
+            ) /
+            100
+        ).toFixed(1);
+
+
+    updateStats();
+
+}
+
+
+/* =====================================================
+   OUTPUT STATS
+===================================================== */
+
+function updateStats() {
+
+    if(
+        !video.duration
+    )
+        return;
+
+
+    const s =
+        settings();
+
+
+    const start =
+        parseFloat(
+            document
+            .getElementById(
+                "startTime"
+            )
+            .value
+        ) || 0;
+
+
+    const end =
+        parseFloat(
+            document
+            .getElementById(
+                "endTime"
+            )
+            .value
+        ) ||
+        video.duration;
+
+
+    const duration =
+        Math.max(
+            0,
+            end-start
+        );
+
+
+    const frameCount =
+        Math.ceil(
+            duration *
+            s.fps
+        );
+
+
+    const pixels =
+        s.width *
+        s.height;
+
+
+    const bytes =
+        pixels /
+        8;
+
+
+    const memory =
+        frameCount *
+        bytes;
+
+
+    document
+    .getElementById(
+        "dFrames"
+    )
+    .textContent =
+        frameCount.toLocaleString();
+
+
+    document
+    .getElementById(
+        "sResolution"
+    )
+    .textContent =
+        `${s.width}×${s.height}`;
+
+
+    document
+    .getElementById(
+        "sPixels"
+    )
+    .textContent =
+        pixels.toLocaleString();
+
+
+    document
+    .getElementById(
+        "sBytes"
+    )
+    .textContent =
+        bytes.toLocaleString();
+
+
+    document
+    .getElementById(
+        "sFrames"
+    )
+    .textContent =
+        frameCount.toLocaleString();
+
+
+    document
+    .getElementById(
+        "sMemory"
+    )
+    .textContent =
+        formatBytes(
+            memory
+        );
+
+
+    document
+    .getElementById(
+        "sDelay"
+    )
+    .textContent =
+        Math.round(
+            1000 /
+            s.fps
+        ) +
+        " ms";
+
+}
+
+
+/* =====================================================
+   GENERATE
+===================================================== */
+
+document
+.getElementById("generate")
+.addEventListener(
+    "click",
+    generate
+);
+
+
+async function generate() {
+
+    const s =
+        settings();
+
+
+    const start =
+        parseFloat(
+            document
+            .getElementById(
+                "startTime"
+            )
+            .value
+        ) || 0;
+
+
+    const end =
+        Math.min(
+            video.duration,
+
+            parseFloat(
+                document
+                .getElementById(
+                    "endTime"
+                )
+                .value
+            ) ||
+            video.duration
+        );
+
+
+    if(
+        end <= start
+    ) {
+
+        alert(
+            "End time must be greater than start time."
+        );
+
+        return;
+
+    }
+
+
+    frames=[];
+
+
+    const total =
+        Math.ceil(
+            (
+                end-start
+            ) *
+            s.fps
+        );
+
+
+    const progress =
+        document
+        .getElementById(
+            "progress"
+        );
+
+
+    const status =
+        document
+        .getElementById(
+            "status"
+        );
+
+
+    const button =
+        document
+        .getElementById(
+            "generate"
+        );
+
+
+    button.disabled=true;
+
+
+    status.textContent =
+        `Generating ${total} frames...`;
+
+
+    for(
+        let i=0;
+        i<total;
+        i++
+    ) {
+
+        const time =
+            start +
+            i/s.fps;
+
+
+        await seekVideo(
+            time
+        );
+
+
+        const bytes =
+            processFrame(
+                s,
+                true
+            );
+
+
+        frames.push(
+            bytes
+        );
+
+
+        const percent =
+            (
+                (i+1) /
+                total
+            ) *
+            100;
+
+
+        progress.style.width =
+            percent +
+            "%";
+
+
+        status.textContent =
+            `Processing frame ${i+1} / ${total}`;
+
+
+        await sleep(0);
+
+    }
+
+
+    status.textContent =
+        "Building C++ code...";
+
+
+    generatedCode =
+        createCPP(s);
+
+
+    document
+    .getElementById(
+        "code"
+    )
+    .value =
+        generatedCode;
+
+
+    document
+    .getElementById(
+        "copy"
+    )
+    .disabled=false;
+
+
+    document
+    .getElementById(
+        "download"
+    )
+    .disabled=false;
+
+
+    status.textContent =
+        `✅ Complete — ${frames.length} frames generated.`;
+
+
+    button.disabled=false;
+
+}
+
+
+/* =====================================================
+   SEEK
+===================================================== */
+
+function seekVideo(
+    time
+) {
+
+    return new Promise(
+        resolve => {
+
+            const handler =
+                () => {
+
+                    video.removeEventListener(
+                        "seeked",
+                        handler
+                    );
+
+                    resolve();
+
+                };
+
+
+            video.addEventListener(
+                "seeked",
+                handler
+            );
+
+
+            video.currentTime =
+                Math.min(
+                    time,
+                    video.duration
+                );
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   CPP GENERATOR
+===================================================== */
+
+function createCPP(s) {
+
+    const bytesPerFrame =
+        s.width *
+        s.height /
+        8;
+
+
+    const totalBytes =
+        frames.length *
+        bytesPerFrame;
+
+
+    let code = `/*
+========================================================
+ESP32 OLED VIDEO PLAYER
+Generated by ESP32 OLED Studio
+========================================================
+
+VIDEO:
+${file.name}
+
+SOURCE RESOLUTION:
+${video.videoWidth} x ${video.videoHeight}
+
+OLED RESOLUTION:
+${s.width} x ${s.height}
+
+OUTPUT FPS:
+${s.fps}
+
+FRAME DELAY:
+${Math.round(1000/s.fps)} ms
+
+TOTAL FRAMES:
+${frames.length}
+
+BYTES PER FRAME:
+${bytesPerFrame}
+
+TOTAL VIDEO DATA:
+${formatBytes(totalBytes)}
+
+SCALING:
+${s.resize}
+
+THRESHOLD:
+${s.thresholdMode}
+
+========================================================
+
+WIRING
+
+OLED VCC -> ESP32 3.3V
+OLED GND -> ESP32 GND
+OLED SDA -> GPIO ${
+        document.getElementById(
+            "sda"
+        ).value
+    }
+OLED SCL -> GPIO ${
+        document.getElementById(
+            "scl"
+        ).value
+    }
+
+========================================================
+*/
+
+#include <Arduino.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <pgmspace.h>
+
+
+#define SCREEN_WIDTH ${s.width}
+#define SCREEN_HEIGHT ${s.height}
+
+#define OLED_SDA ${
+        document.getElementById(
+            "sda"
+        ).value
+    }
+
+#define OLED_SCL ${
+        document.getElementById(
+            "scl"
+        ).value
+    }
+
+#define OLED_ADDRESS ${
+        document.getElementById(
+            "address"
+        ).value
+    }
+
+#define FRAME_DELAY ${Math.round(1000/s.fps)}
+
+#define NUM_FRAMES ${frames.length}
+
+#define BYTES_PER_FRAME ${bytesPerFrame}
+
+
+Adafruit_SSD1306 display(
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+    &Wire,
+    -1
+);
+
+
+const uint8_t frames[
+    NUM_FRAMES
+][
+    BYTES_PER_FRAME
+] PROGMEM = {
+
+`;
+
+
+    frames.forEach(
+        (frame,index) => {
+
+            code +=
+                `    { // Frame ${index}\n`;
+
+
+            for(
+                let i=0;
+                i<frame.length;
+                i+=16
+            ) {
+
+                const row =
+                    frame
+                    .slice(
+                        i,
+                        i+16
+                    )
+                    .map(
+                        v =>
+                            "0x" +
+                            v
+                            .toString(16)
+                            .padStart(
+                                2,
+                                "0"
+                            )
+                    )
+                    .join(
+                        ", "
+                    );
+
+
+                code +=
+                    "        " +
+                    row +
+                    (
+                        i+16 <
+                        frame.length
+                            ? ","
+                            : ""
+                    ) +
+                    "\n";
+
+            }
+
+
+            code +=
+                index <
+                frames.length-1
+                    ? "    },\n"
+                    : "    }\n";
+
+        }
+    );
+
+
+    code += `};
+
+
+void setup()
+{
+    Serial.begin(115200);
+
+
+    Wire.begin(
+        OLED_SDA,
+        OLED_SCL
+    );
+
+
+    if(
+        !display.begin(
+            SSD1306_SWITCHCAPVCC,
+            OLED_ADDRESS
+        )
+    )
+    {
+
+        Serial.println(
+            "SSD1306 allocation failed!"
+        );
+
+
+        while(true)
+        {
+            delay(1000);
+        }
+
+    }
+
+
+    display.clearDisplay();
+
+    display.display();
+
+}
+
+
+void loop()
+{
+
+    for(
+        uint32_t frame=0;
+        frame<NUM_FRAMES;
+        frame++
+    )
+    {
+
+        display.clearDisplay();
+
+
+        display.drawBitmap(
+            0,
+            0,
+            frames[frame],
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT,
+            SSD1306_WHITE
+        );
+
+
+        display.display();
+
+
+        delay(
+            FRAME_DELAY
+        );
+
+    }
+
+}
+`;
+
+
+    return code;
+
+}
+
+
+/* =====================================================
+   COPY
+===================================================== */
+
+document
+.getElementById("copy")
+.addEventListener(
+    "click",
+    async () => {
+
+        await navigator.clipboard.writeText(
+            generatedCode
+        );
+
+
+        const b =
+            document.getElementById(
+                "copy"
+            );
+
+
+        b.textContent =
+            "✅ Copied!";
+
+
+        setTimeout(
+            () => {
+
+                b.textContent =
+                    "📋 Copy Code";
+
+            },
+            1500
+        );
+
+    }
+);
+
+
+/* =====================================================
+   DOWNLOAD
+===================================================== */
+
+document
+.getElementById("download")
+.addEventListener(
+    "click",
+    () => {
+
+        const blob =
+            new Blob(
+                [generatedCode],
+                {
+                    type:
+                        "text/plain"
+                }
+            );
+
+
+        const url =
+            URL.createObjectURL(
+                blob
+            );
+
+
+        const a =
+            document.createElement(
+                "a"
+            );
+
+
+        a.href=url;
+
+        a.download =
+            "esp32_oled_video.cpp";
+
+
+        a.click();
+
+
+        URL.revokeObjectURL(
+            url
+        );
+
+    }
+);
+
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+function formatTime(sec) {
+
+    if(
+        !isFinite(sec)
+    )
+        return "00:00";
+
+
+    const m =
+        Math.floor(
+            sec/60
+        );
+
+
+    const s =
+        Math.floor(
+            sec%60
+        );
+
+
+    return String(m)
+        .padStart(2,"0")
+        + ":" +
+        String(s)
+        .padStart(2,"0");
+
+}
+
+
+function formatBytes(bytes) {
+
+    if(
+        bytes < 1024
+    )
+        return bytes+" B";
+
+
+    if(
+        bytes < 1024*1024
+    )
+        return (
+            bytes/1024
+        ).toFixed(2)
+        + " KB";
+
+
+    return (
+        bytes/
+        (
+            1024*1024
+        )
+    ).toFixed(2)
+    + " MB";
+
+}
+
+
+function ratio(w,h) {
+
+    function gcd(a,b) {
+
+        while(b) {
+
+            const t=b;
+
+            b=a%b;
+
+            a=t;
+
+        }
+
+        return a;
+
+    }
+
+
+    const g =
+        gcd(w,h);
+
+
+    return (
+        w/g
+    )
+    + ":" +
+    (
+        h/g
+    );
+
+}
+
+
+function sleep(ms) {
+
+    return new Promise(
+        resolve =>
+            setTimeout(
+                resolve,
+                ms
+            )
+    );
+
+}
+
+
+updateUI();
+
+</script>
+
+</body>
+
+</html>
